@@ -14,6 +14,7 @@ export interface Character {
 export interface Player extends Character {
   experience: number;
   level: number;
+  attackRange: number;
 }
 
 export interface Enemy extends Character {

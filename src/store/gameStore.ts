@@ -8,11 +8,13 @@ import {
 
 const GAME_WIDTH = window.innerWidth;
 const GAME_HEIGHT = window.innerHeight;
-const ATTACK_RANGE = 50; // Used for player attack range
+const BASE_ATTACK_RANGE = 50; // Base attack range
 const ENEMY_DAMAGE = 10;
 const ENEMY_ATTACK_RANGE = 20;
 
-const INITIAL_TREE_COUNT = 5; // Number of trees to spawn at the start
+const INITIAL_TREE_COUNT = 5; // Base number of trees
+const TREE_INCREMENT_PER_LEVEL = 2; // Trees to spawn per level
+const ENEMY_INCREMENT_PER_LEVEL = 2; // Enemies to spawn per level
 
 const generateTreePosition = () => {
   return {
@@ -21,8 +23,9 @@ const generateTreePosition = () => {
   };
 };
 
-const generateInitialTrees = () => {
-  return Array.from({ length: INITIAL_TREE_COUNT }, (_, id) => ({
+const generateInitialTrees = (level: number) => {
+  const treeCount = INITIAL_TREE_COUNT + (level - 1) * TREE_INCREMENT_PER_LEVEL;
+  return Array.from({ length: treeCount }, (_, id) => ({
     position: generateTreePosition(),
     health: 200,
     maxHealth: 200,
@@ -39,16 +42,16 @@ const INITIAL_STATE: GameState = {
     speed: 8,
     experience: 0,
     level: 1,
+    attackRange: BASE_ATTACK_RANGE,
   },
   enemies: [],
-  trees: generateInitialTrees(), // Generate trees immediately at the start
+  trees: generateInitialTrees(1), // Generate trees immediately at the start
   gameOver: false,
   score: 0,
   level: 1,
 };
 
 const MAX_ENEMIES_PER_LEVEL = 20; // Maximum enemies per level
-const BASE_ENEMY_SPAWN_RATE = 1000; // Initial spawn rate in milliseconds
 
 export const useGameStore = create<
   GameState & {
@@ -63,14 +66,23 @@ export const useGameStore = create<
 
   movePlayer: (direction) =>
     set((state) => {
-      const newPosition = clampPosition(
-        {
-          x: state.player.position.x + direction.x * state.player.speed,
-          y: state.player.position.y + direction.y * state.player.speed,
-        },
-        GAME_WIDTH,
-        GAME_HEIGHT
-      );
+      let newPosition = {
+        x: state.player.position.x + direction.x * state.player.speed,
+        y: state.player.position.y + direction.y * state.player.speed,
+      };
+
+      // Wrap around logic
+      if (newPosition.x < 0) {
+        newPosition.x = GAME_WIDTH; // Wrap to the right
+      } else if (newPosition.x > GAME_WIDTH) {
+        newPosition.x = 0; // Wrap to the left
+      }
+
+      if (newPosition.y < 0) {
+        newPosition.y = GAME_HEIGHT; // Wrap to the bottom
+      } else if (newPosition.y > GAME_HEIGHT) {
+        newPosition.y = 0;
+      }
 
       return {
         player: {
@@ -82,8 +94,9 @@ export const useGameStore = create<
 
   spawnEnemy: () =>
     set((state) => {
-      if (state.enemies.length >= MAX_ENEMIES_PER_LEVEL * state.level)
-        return state; // Max enemies cap based on level
+      const maxEnemies =
+        MAX_ENEMIES_PER_LEVEL + (state.level - 1) * ENEMY_INCREMENT_PER_LEVEL;
+      if (state.enemies.length >= maxEnemies) return state; // Max enemies cap based on level
 
       const spawnEdge = Math.floor(Math.random() * 4);
       let position: Position;
@@ -122,7 +135,7 @@ export const useGameStore = create<
       if (newEnemies[enemyIndex].health <= 0) {
         newEnemies.splice(enemyIndex, 1);
         const newScore = state.score + 100;
-        const newExperience = state.player.experience + 20;
+        const newExperience = state.player.experience + 2;
 
         // Check if all enemies are defeated
         if (newEnemies.length === 0) {
@@ -134,13 +147,9 @@ export const useGameStore = create<
               ...state.player,
               experience: newExperience,
               level: state.player.level + 1,
+              attackRange: BASE_ATTACK_RANGE + state.player.level * 10, // Increase attack range per level
             },
-            trees: Array.from({ length: state.level + 2 }, (_, id) => ({
-              position: generateTreePosition(),
-              health: 200,
-              maxHealth: 200,
-              id: id + 1,
-            })) as TreeType[],
+            trees: generateInitialTrees(state.player.level + 1), // Generate more trees for the next level
           };
         }
 
@@ -199,7 +208,7 @@ export const useGameStore = create<
           // Check if enemy reached tree
           if (
             calculateDistance(enemy.position, targetTree.position) <
-            ATTACK_RANGE
+            state.player.attackRange
           ) {
             targetTree.health -= enemy.damage * 0.1; // Reduced damage per frame
 
@@ -235,6 +244,6 @@ export const useGameStore = create<
   resetGame: () =>
     set({
       ...INITIAL_STATE,
-      trees: generateInitialTrees(),
+      trees: generateInitialTrees(1),
     }),
 }));

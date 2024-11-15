@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { HealthBar } from "./HealthBar";
 import { GameOverlay } from "./GameOverlay";
-import Confetti from "react-confetti";
+import CustomJoystick from "./CustomJoystick"; // Import the custom joystick
+import ConfettiExplosion from "react-confetti-explosion";
 
 export const GameCanvas: React.FC = () => {
   const {
@@ -20,6 +21,16 @@ export const GameCanvas: React.FC = () => {
   } = useGameStore();
 
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -47,13 +58,16 @@ export const GameCanvas: React.FC = () => {
           movement.x = 1;
           break;
         case " ":
-          const nearestEnemyIndex = enemies.findIndex((enemy) => {
-            const dx = enemy.position.x - player.position.x;
-            const dy = enemy.position.y - player.position.y;
-            return Math.sqrt(dx * dx + dy * dy) < 50;
-          });
-          if (nearestEnemyIndex !== -1) {
-            attackEnemy(nearestEnemyIndex);
+          if (!isMobile) {
+            // Only allow spacebar attack on non-mobile
+            const nearestEnemyIndex = enemies.findIndex((enemy) => {
+              const dx = enemy.position.x - player.position.x;
+              const dy = enemy.position.y - player.position.y;
+              return Math.sqrt(dx * dx + dy * dy) < 50;
+            });
+            if (nearestEnemyIndex !== -1) {
+              attackEnemy(nearestEnemyIndex);
+            }
           }
           break;
       }
@@ -87,22 +101,28 @@ export const GameCanvas: React.FC = () => {
     gameOver,
     resetGame,
   ]);
-
   // Show confetti when the level changes
   useEffect(() => {
     if (level > 1) {
       setShowConfetti(true);
       const timer = setTimeout(() => {
         setShowConfetti(false);
-      }, 3000); // Show confetti for 3 seconds
+      }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [level]);
+  }, [level, showConfetti]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-green-300">
       {/* Confetti Animation */}
-      {showConfetti && <Confetti />}
+      {showConfetti && (
+        <ConfettiExplosion
+          particleCount={250}
+          duration={3000}
+          force={0.8}
+          width={1600}
+        />
+      )}
 
       {/* Game Over Overlay */}
       {gameOver && (
@@ -120,7 +140,7 @@ export const GameCanvas: React.FC = () => {
         </div>
       )}
       {/* Game UI */}
-      <GameOverlay player={player} score={score} />
+      <GameOverlay player={player} score={score} isMobile={isMobile} />
       {/* Game Elements */}
       <div className="absolute inset-0">
         {/* Player */}
@@ -187,6 +207,25 @@ export const GameCanvas: React.FC = () => {
           </div>
         ))}
       </div>
+      {isMobile && (
+        <CustomJoystick
+          onMove={(movement) => {
+            movePlayer(movement);
+            updateGame();
+          }}
+          onAttack={() => {
+            const nearestEnemyIndex = enemies.findIndex((enemy) => {
+              const dx = enemy.position.x - player.position.x;
+              const dy = enemy.position.y - player.position.y;
+              return Math.sqrt(dx * dx + dy * dy) < 50 + player.level * 10;
+            });
+            if (nearestEnemyIndex !== -1) {
+              attackEnemy(nearestEnemyIndex);
+            }
+          }}
+          style={{ zIndex: 100 }}
+        />
+      )}
     </div>
   );
 };

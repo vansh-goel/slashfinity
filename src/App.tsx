@@ -11,9 +11,11 @@ function App() {
   };
 
   return (
-    <TonConnectUIProvider manifestUrl="https://<YOUR_APP_URL>/tonconnect-manifest.json">
-      {isGameStarted ? <GameCanvas /> : <HomeScreen onPlay={handlePlay} />}
-    </TonConnectUIProvider>
+    <div className="w-full overflow-hidden">
+      <TonConnectUIProvider manifestUrl="https://<YOUR_APP_URL>/tonconnect-manifest.json">
+        {isGameStarted ? <GameCanvas /> : <HomeScreen onPlay={handlePlay} />}
+      </TonConnectUIProvider>
+    </div>
   );
 }
 

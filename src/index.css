@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden; /* Prevent scrolling */
+  }
+  
+  #root { /* Assuming your app is rendered in a div with id 'root' */
+    height: 100%;
+  }
+  
+  .app-container { /* Add this class to your main container */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; /* Prevent overflow */
+  }
