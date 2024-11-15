@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import { useGameStore } from '../store/gameStore';
-import { HealthBar } from './HealthBar';
-import { GameOverlay } from './GameOverlay';
+import React, { useEffect, useState } from "react";
+import { useGameStore } from "../store/gameStore";
+import { HealthBar } from "./HealthBar";
+import { GameOverlay } from "./GameOverlay";
+import Confetti from "react-confetti";
 
 export const GameCanvas: React.FC = () => {
   const {
@@ -14,35 +15,38 @@ export const GameCanvas: React.FC = () => {
     attackEnemy,
     updateGame,
     spawnEnemy,
-    resetGame
+    resetGame,
+    level,
   } = useGameStore();
+
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (gameOver) {
-        if (e.key === 'r') resetGame();
+        if (e.key === "r") resetGame();
         return;
       }
 
       const movement = { x: 0, y: 0 };
       switch (e.key.toLowerCase()) {
-        case 'arrowup':
-        case 'w':
+        case "arrowup":
+        case "w":
           movement.y = -1;
           break;
-        case 'arrowdown':
-        case 's':
+        case "arrowdown":
+        case "s":
           movement.y = 1;
           break;
-        case 'arrowleft':
-        case 'a':
+        case "arrowleft":
+        case "a":
           movement.x = -1;
           break;
-        case 'arrowright':
-        case 'd':
+        case "arrowright":
+        case "d":
           movement.x = 1;
           break;
-        case ' ':
+        case " ":
           const nearestEnemyIndex = enemies.findIndex((enemy) => {
             const dx = enemy.position.x - player.position.x;
             const dy = enemy.position.y - player.position.y;
@@ -58,8 +62,8 @@ export const GameCanvas: React.FC = () => {
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    
+    window.addEventListener("keydown", handleKeyPress);
+
     const gameLoop = setInterval(() => {
       if (!gameOver) {
         updateGame();
@@ -70,13 +74,36 @@ export const GameCanvas: React.FC = () => {
     }, 1000 / 60);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyPress);
+      window.removeEventListener("keydown", handleKeyPress);
       clearInterval(gameLoop);
     };
-  }, [movePlayer, attackEnemy, updateGame, spawnEnemy, enemies, player.position, gameOver, resetGame]);
+  }, [
+    movePlayer,
+    attackEnemy,
+    updateGame,
+    spawnEnemy,
+    enemies,
+    player.position,
+    gameOver,
+    resetGame,
+  ]);
+
+  // Show confetti when the level changes
+  useEffect(() => {
+    if (level > 1) {
+      setShowConfetti(true);
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 3000); // Show confetti for 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [level]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-screen overflow-hidden bg-green-300">
+      {/* Confetti Animation */}
+      {showConfetti && <Confetti />}
+
       {/* Game Over Overlay */}
       {gameOver && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -92,10 +119,8 @@ export const GameCanvas: React.FC = () => {
           </div>
         </div>
       )}
-
       {/* Game UI */}
       <GameOverlay player={player} score={score} />
-
       {/* Game Elements */}
       <div className="absolute inset-0">
         {/* Player */}
@@ -104,16 +129,19 @@ export const GameCanvas: React.FC = () => {
           style={{
             left: `${player.position.x}px`,
             top: `${player.position.y}px`,
-            transform: 'translate(-50%, -50%)'
+            transform: "translate(-50%, -50%)",
           }}
         >
           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
             P
           </div>
-          <HealthBar current={player.health} max={player.maxHealth} width={32} />
+          <HealthBar
+            current={player.health}
+            max={player.maxHealth}
+            width={32}
+          />
         </div>
 
-        {/* Trees */}
         {trees.map((tree) => (
           <div
             key={tree.id}
@@ -121,7 +149,8 @@ export const GameCanvas: React.FC = () => {
             style={{
               left: `${tree.position.x}px`,
               top: `${tree.position.y}px`,
-              transform: 'translate(-50%, -50%)'
+              transform: "translate(-50%, -50%)",
+              zIndex: 1, // Ensure trees are behind other elements
             }}
           >
             <div className="w-12 h-12 bg-green-700 rounded-lg flex items-center justify-center text-white font-bold">
@@ -139,17 +168,22 @@ export const GameCanvas: React.FC = () => {
             style={{
               left: `${enemy.position.x}px`,
               top: `${enemy.position.y}px`,
-              transform: 'translate(-50%, -50%)'
+              transform: "translate(-50%, -50%)",
+              zIndex: 10, // Ensure enemies are above trees
             }}
           >
-            <div 
+            <div
               className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold ${
-                enemy.type === 'logger' ? 'bg-red-500' : 'bg-purple-500'
+                enemy.type === "logger" ? "bg-red-500" : "bg-purple-500"
               }`}
             >
-              {enemy.type === 'logger' ? 'L' : 'P'}
+              {enemy.type === "logger" ? "L" : "P"}
             </div>
-            <HealthBar current={enemy.health} max={enemy.maxHealth} width={24} />
+            <HealthBar
+              current={enemy.health}
+              max={enemy.maxHealth}
+              width={24}
+            />
           </div>
         ))}
       </div>

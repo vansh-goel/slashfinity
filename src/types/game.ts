@@ -17,7 +17,7 @@ export interface Player extends Character {
 }
 
 export interface Enemy extends Character {
-  type: 'logger' | 'polluter';
+  type: "logger" | "polluter";
   targetTree?: number;
 }
 
@@ -34,4 +34,5 @@ export interface GameState {
   trees: Tree[];
   gameOver: boolean;
   score: number;
+  level: number;
 }
