@@ -1,0 +1,30 @@
+{
+  "name": "Eco Warriors Game",
+  "short_name": "EcoWarriors",
+  "description": "A fun game to protect the environment.",
+  "url": "https://<YOUR_APP_URL>",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#4CAF50",
+  "background_color": "#FFFFFF",
+  "start_url": "/",
+  "display": "standalone",
+  "scope": "/",
+  "version": "1.0.0",
+  "provider": {
+    "name": "Your Company Name",
+    "url": "https://<YOUR_COMPANY_URL>"
+  },
+  "wallets": [
+    {
+      "name": "TON Wallet",
+      "icon": "https://example.com/ton-wallet-icon.png",
+      "app_name": "tonwallet"
+    }
+  ]
+}
