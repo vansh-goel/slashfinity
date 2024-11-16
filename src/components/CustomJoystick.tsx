@@ -110,14 +110,16 @@ const CustomJoystick: React.FC<CustomJoystickProps> = ({
       <button
         onClick={onAttack}
         style={{
-          backgroundColor: "red",
+          backgroundColor: "rgba(0, 0, 255, 0.5)",
           color: "white",
-          padding: "10px 20px",
-          borderRadius: "5px",
+          padding: "20px 20px",
+          height: "100px",
+          width: "100px",
+          borderRadius: "1000px",
           border: "2px solid black", // Black border for button
         }}
       >
-        Attack
+        X
       </button>
     </div>
   );

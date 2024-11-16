@@ -3,23 +3,20 @@ import { Player } from "../types/game";
 
 interface GameOverlayProps {
   player: Player;
-  score: number;
   isMobile: boolean;
 }
 
 export const GameOverlay: React.FC<GameOverlayProps> = ({
   player,
-  score,
   isMobile,
 }) => {
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute inset-0 pointer-events-none z-50">
       <div className="absolute top-4 left-4 bg-white/90 p-4 rounded-lg shadow-md">
-        <div className="text-xl font-bold">Score: {score}</div>
+        <div className="text-xl font-bold">Level: {player.level}</div>
         <div className="mt-2">
-          <div className="text-sm text-gray-600">Level: {player.level}</div>
           <div className="text-sm text-gray-600">
-            XP: {player.experience}/100
+            XP: {player.experience}/{player.level * 100}
           </div>
         </div>
       </div>

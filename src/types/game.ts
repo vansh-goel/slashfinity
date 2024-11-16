@@ -27,6 +27,7 @@ export interface Tree {
   health: number;
   maxHealth: number;
   id: number;
+  isImmune?: boolean;
 }
 
 export interface GameState {
@@ -36,4 +37,8 @@ export interface GameState {
   gameOver: boolean;
   score: number;
   level: number;
+  lastSpawnTime: number;
+  chests: any[];
+  inventory: any[];
+  enemiesKilled: number;
 }

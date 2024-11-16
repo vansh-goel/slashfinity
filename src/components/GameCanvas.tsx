@@ -18,6 +18,9 @@ export const GameCanvas: React.FC = () => {
     spawnEnemy,
     resetGame,
     level,
+    inventory, // Add inventory to destructured state
+    chests, // Add chests to destructured state
+    useItem, // Add useItem to destructured state
   } = useGameStore();
 
   const [showConfetti, setShowConfetti] = useState(false);
@@ -59,7 +62,6 @@ export const GameCanvas: React.FC = () => {
           break;
         case " ":
           if (!isMobile) {
-            // Only allow spacebar attack on non-mobile
             const nearestEnemyIndex = enemies.findIndex((enemy) => {
               const dx = enemy.position.x - player.position.x;
               const dy = enemy.position.y - player.position.y;
@@ -101,7 +103,7 @@ export const GameCanvas: React.FC = () => {
     gameOver,
     resetGame,
   ]);
-  // Show confetti when the level changes
+
   useEffect(() => {
     if (level > 1) {
       setShowConfetti(true);
@@ -114,7 +116,6 @@ export const GameCanvas: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-green-300">
-      {/* Confetti Animation */}
       {showConfetti && (
         <ConfettiExplosion
           particleCount={250}
@@ -124,12 +125,11 @@ export const GameCanvas: React.FC = () => {
         />
       )}
 
-      {/* Game Over Overlay */}
       {gameOver && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-xl text-center">
             <h2 className="text-2xl font-bold mb-4">Game Over!</h2>
-            <p className="mb-4">Final Score: {score}</p>
+            <p className="mb-4">Level: {player.level}</p>
             <button
               onClick={resetGame}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
@@ -139,11 +139,10 @@ export const GameCanvas: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Game UI */}
-      <GameOverlay player={player} score={score} isMobile={isMobile} />
-      {/* Game Elements */}
+
+      <GameOverlay player={player} isMobile={isMobile} />
+
       <div className="absolute inset-0">
-        {/* Player */}
         <div
           className="absolute transition-transform duration-100"
           style={{
@@ -170,13 +169,31 @@ export const GameCanvas: React.FC = () => {
               left: `${tree.position.x}px`,
               top: `${tree.position.y}px`,
               transform: "translate(-50%, -50%)",
-              zIndex: 1, // Ensure trees are behind other elements
+              zIndex: 1,
             }}
           >
             <div className="w-12 h-12 bg-green-700 rounded-lg flex items-center justify-center text-white font-bold">
               🌳
             </div>
             <HealthBar current={tree.health} max={tree.maxHealth} width={48} />
+          </div>
+        ))}
+
+        {/* Display Chests */}
+        {chests.map((chest, index) => (
+          <div
+            key={index}
+            className="absolute transition-transform"
+            style={{
+              left: `${chest.position.x}px`,
+              top: `${chest.position.y}px`,
+              transform: "translate(-50%, -50%)",
+              zIndex: 20, // Ensure chests are above trees and enemies
+            }}
+          >
+            <div className="w-8 h-8 flex items-center justify-center text-white font-bold">
+              🎁
+            </div>
           </div>
         ))}
 
@@ -207,6 +224,7 @@ export const GameCanvas: React.FC = () => {
           </div>
         ))}
       </div>
+
       {isMobile && (
         <CustomJoystick
           onMove={(movement) => {
@@ -226,6 +244,22 @@ export const GameCanvas: React.FC = () => {
           style={{ zIndex: 100 }}
         />
       )}
+
+      {/* Inventory Display */}
+      <div className="absolute right-0 top-0 z-50 p-4">
+        <h2 className="text-lg font-bold">Inventory</h2>
+        <div className="flex flex-col">
+          {inventory.map((item, index) => (
+            <div
+              key={index}
+              className="bg-white p-2 m-1 rounded shadow cursor-pointer"
+              onClick={() => useItem(item)} // Use the item when clicked
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
