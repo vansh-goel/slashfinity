@@ -87,7 +87,6 @@ const getRandomItem = () => {
     "🫧", // Heal trees
     "🗡️", // Increase attack
     "🛡️", // Immunity for trees
-    "🛠️", // Build fence
     "🌱", // Plant a new tree
   ];
   return items[Math.floor(Math.random() * items.length)];
@@ -183,64 +182,78 @@ export const useGameStore = create<
       };
     }),
 
-  attackEnemy: (enemyIndex) =>
+  attackEnemy: (enemyIndex: number) =>
     set((state) => {
       const newEnemies = [...state.enemies];
-      newEnemies[enemyIndex].health -= state.player.damage;
+      const attackRange = state.player.attackRange; // Use the player's attack range
+      const playerPosition = state.player.position;
 
-      if (newEnemies[enemyIndex].health <= 0) {
-        newEnemies.splice(enemyIndex, 1);
-        const newExperience = state.player.experience + BASE_XP;
+      // Check for all enemies within the attack range
+      const enemiesInRange = newEnemies.filter((enemy) => {
+        const dx = enemy.position.x - playerPosition.x;
+        const dy = enemy.position.y - playerPosition.y;
+        return Math.sqrt(dx * dx + dy * dy) < attackRange; // Check distance
+      });
 
-        const currentTime = Date.now();
-        const timeSinceLastKill = currentTime - state.lastKillTime;
+      // Apply damage to each enemy in range
+      enemiesInRange.forEach((enemy) => {
+        enemy.health -= state.player.damage;
 
-        let comboKillCount = state.comboKillCount;
-
-        if (timeSinceLastKill <= 10000) {
-          comboKillCount += 1;
-        } else {
-          comboKillCount = 1;
+        if (enemy.health <= 0) {
+          const enemyIndexToRemove = newEnemies.indexOf(enemy);
+          newEnemies.splice(enemyIndexToRemove, 1);
         }
+      });
 
-        const updatedLevel =
-          Math.floor(
-            newExperience /
-              (BASE_XP_TO_LEVEL_UP +
-                (state.player.level - 1) * XP_INCREMENT_PER_LEVEL)
-          ) + 1;
+      const newExperience =
+        state.player.experience + BASE_XP * enemiesInRange.length; // Increase experience based on number of enemies killed
 
-        const updatedState = {
-          enemies: newEnemies,
-          score: state.score + 100,
-          player: {
-            ...state.player,
-            experience: newExperience,
-            level: updatedLevel,
-          },
-          level: updatedLevel,
-          enemiesKilled: state.enemiesKilled + 1,
-          lastKillTime: currentTime,
-          comboKillCount,
-          inventory: [...state.inventory],
-        };
+      const currentTime = Date.now();
+      const timeSinceLastKill = currentTime - state.lastKillTime;
 
-        if (updatedState.comboKillCount >= 5) {
-          const item = getRandomItem();
-          updatedState.inventory.push(item);
-          updatedState.comboKillCount = 0;
-        }
+      let comboKillCount = state.comboKillCount;
 
-        if (updatedState.player.level > state.player.level) {
-          const levelUpSound = new Audio(levelUpSoundPath);
-          levelUpSound.play();
-          updatedState.player.experience = 0;
-        }
-
-        return updatedState;
+      if (timeSinceLastKill <= 10000) {
+        comboKillCount += enemiesInRange.length; // Increment combo kill count based on number of enemies killed
+      } else {
+        comboKillCount = enemiesInRange.length; // Reset combo kill count to the number of enemies killed
       }
 
-      return { enemies: newEnemies };
+      const updatedLevel =
+        Math.floor(
+          newExperience /
+            (BASE_XP_TO_LEVEL_UP +
+              (state.player.level - 1) * XP_INCREMENT_PER_LEVEL)
+        ) + 1;
+
+      const updatedState = {
+        enemies: newEnemies,
+        score: state.score + 100 * enemiesInRange.length, // Increase score based on number of enemies killed
+        player: {
+          ...state.player,
+          experience: newExperience,
+          level: updatedLevel,
+        },
+        level: updatedLevel,
+        enemiesKilled: state.enemiesKilled + enemiesInRange.length, // Update enemies killed count
+        lastKillTime: currentTime,
+        comboKillCount,
+        inventory: [...state.inventory],
+      };
+
+      if (updatedState.comboKillCount >= 5) {
+        const item = getRandomItem();
+        updatedState.inventory.push(item);
+        updatedState.comboKillCount = 0;
+      }
+
+      if (updatedState.player.level > state.player.level) {
+        const levelUpSound = new Audio(levelUpSoundPath);
+        levelUpSound.play();
+        updatedState.player.experience = 0;
+      }
+
+      return updatedState;
     }),
 
   updateGame: () =>
@@ -348,13 +361,20 @@ export const useGameStore = create<
   useItem: (item: string) =>
     set((state) => {
       const newInventory = state.inventory.filter((i) => i !== item); // Remove the item from inventory
-      if (newInventory.length < 2) {
-        newInventory.push(item);
-      }
 
       switch (item) {
         case "🪽":
-          return { enemies: [] };
+          const enemiesKilled = state.enemies.length;
+          const newExperience =
+            state.player.experience + BASE_XP * enemiesKilled;
+          return {
+            enemies: [],
+            player: {
+              ...state.player,
+              experience: newExperience,
+            },
+            inventory: newInventory,
+          };
         case "🫧":
           state.trees.forEach((tree) => {
             tree.health = Math.min(tree.maxHealth, tree.health + 20);
@@ -363,9 +383,15 @@ export const useGameStore = create<
         case "🗡️":
           state.player.attackRange *= 20;
           state.player.damage *= 20;
+
           setTimeout(() => {
-            state.player.attackRange /= 20;
-            state.player.damage /= 20;
+            set((s) => ({
+              player: {
+                ...s.player,
+                attackRange: s.player.attackRange / 20,
+                damage: s.player.damage / 20,
+              },
+            }));
           }, 30000);
           break;
         case "🛡️":
@@ -378,9 +404,6 @@ export const useGameStore = create<
             });
           }, 20000);
           break;
-        case "🛠️":
-          // Implement fence logic here
-          break;
         case "🌱":
           const newTree = {
             position: generateTreePosition(),
@@ -388,10 +411,10 @@ export const useGameStore = create<
             maxHealth: 200,
             id: state.trees.length + 1,
           };
-          return { trees: [...state.trees, newTree] };
+          return { trees: [...state.trees, newTree], inventory: newInventory };
       }
 
-      return { inventory: newInventory }; // Return the updated inventory
+      return { inventory: newInventory };
     }),
 
   removeItem: (item: string) =>
