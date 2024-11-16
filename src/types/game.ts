@@ -41,4 +41,6 @@ export interface GameState {
   chests: any[];
   inventory: any[];
   enemiesKilled: number;
+  lastKillTime: number;
+  comboKillCount: number;
 }

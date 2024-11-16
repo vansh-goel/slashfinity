@@ -20,7 +20,7 @@ export const GameCanvas: React.FC = () => {
     level,
     inventory, // Add inventory to destructured state
     chests, // Add chests to destructured state
-    useItem, // Add useItem to destructured state
+    useItem,
   } = useGameStore();
 
   const [showConfetti, setShowConfetti] = useState(false);
@@ -172,7 +172,7 @@ export const GameCanvas: React.FC = () => {
               zIndex: 1,
             }}
           >
-            <div className="w-12 h-12 bg-green-700 rounded-lg flex items-center justify-center text-white font-bold">
+            <div className="w-12 h-12 rounded-lg bg-green-700 flex items-center justify-center text-white font-bold">
               🌳
             </div>
             <HealthBar current={tree.health} max={tree.maxHealth} width={48} />
@@ -188,7 +188,10 @@ export const GameCanvas: React.FC = () => {
               left: `${chest.position.x}px`,
               top: `${chest.position.y}px`,
               transform: "translate(-50%, -50%)",
-              zIndex: 20, // Ensure chests are above trees and enemies
+              zIndex: 20,
+            }}
+            onClick={() => {
+              useItem(chest.item);
             }}
           >
             <div className="w-8 h-8 flex items-center justify-center text-white font-bold">
@@ -210,11 +213,11 @@ export const GameCanvas: React.FC = () => {
             }}
           >
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
                 enemy.type === "logger" ? "bg-red-500" : "bg-purple-500"
               }`}
             >
-              {enemy.type === "logger" ? "L" : "P"}
+              {enemy.type === "logger" ? "☢️" : "👹"}
             </div>
             <HealthBar
               current={enemy.health}

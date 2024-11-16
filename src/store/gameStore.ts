@@ -68,6 +68,8 @@ const INITIAL_STATE: GameState = {
   chests: [],
   inventory: [],
   enemiesKilled: 0, // Track the number of enemies killed
+  lastKillTime: 0, // Track the last kill time
+  comboKillCount: 0, // Track the combo kill count
 };
 
 const MAX_ENEMIES_PER_LEVEL = 20;
@@ -204,6 +206,17 @@ export const useGameStore = create<
         const newExperience = state.player.experience + BASE_XP;
 
         // Increment enemies killed
+        const currentTime = Date.now();
+        const timeSinceLastKill = currentTime - state.lastKillTime;
+
+        let comboKillCount = state.comboKillCount;
+
+        if (timeSinceLastKill <= 10000) {
+          comboKillCount += 1; // Increment combo kill count if within 10 seconds
+        } else {
+          comboKillCount = 1; // Reset combo kill count if more than 10 seconds
+        }
+
         const updatedState = {
           enemies: newEnemies,
           score: state.score + 100,
@@ -219,23 +232,27 @@ export const useGameStore = create<
           },
           enemiesKilled: state.enemiesKilled + 1,
           chests: state.chests, // Ensure chests are included
+          lastKillTime: currentTime, // Update last kill time
+          comboKillCount, // Update combo kill count
         };
 
         // Check for chest spawn
-        if (updatedState.enemiesKilled >= 5) {
+        if (updatedState.comboKillCount >= 2) {
           newChest = {
             position: generateTreePosition(),
             health: 100, // Example health for the chest
             item: getRandomItem(), // Get a random item for the chest
+            createdAt: currentTime, // Track when the chest was created
           };
           updatedState.chests = [...state.chests, newChest]; // Add newChest to chests
-          updatedState.enemiesKilled = 0; // Reset enemy kill count
+          updatedState.comboKillCount = 0; // Reset combo kill count
         }
 
         // Check for level up and play sound
         if (updatedState.player.level > state.player.level) {
           const levelUpSound = new Audio(levelUpSoundPath);
           levelUpSound.play();
+          updatedState.player.experience = 0; // Reset experience to 0 after leveling up
         }
 
         return updatedState;
@@ -253,6 +270,11 @@ export const useGameStore = create<
       const newChests = [...state.chests];
       let gameOver = false;
       let playerHealth = state.player.health;
+
+      const currentTime = Date.now();
+      const filteredChests = newChests.filter((chest) => {
+        return currentTime - chest.createdAt < 10000; // Keep chest for 10 seconds
+      });
 
       newEnemies.forEach((enemy) => {
         if (enemy.targetTree === undefined) {
@@ -333,8 +355,11 @@ export const useGameStore = create<
       // Chest logic
       newChests.forEach((chest) => {
         chest.health -= 1000; // Decrease health every second
+        if (chest.health <= 0) {
+          // Remove chest if health is 0
+          filteredChests.splice(filteredChests.indexOf(chest), 1);
+        }
       });
-      const filteredChests = newChests.filter((chest) => chest.health > 0);
 
       // Check for chest interactions
       filteredChests.forEach((chest, index) => {
@@ -349,11 +374,10 @@ export const useGameStore = create<
             return { inventory: newInventory };
           });
 
-          state.useItem(item);
+          // Remove the chest from the game state
           filteredChests.splice(index, 1);
         }
       });
-
       return {
         enemies: newEnemies,
         trees: newTrees,
