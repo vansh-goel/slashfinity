@@ -14,11 +14,6 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
     <div className="absolute inset-0 pointer-events-none z-50">
       <div className="absolute top-4 left-4 bg-white/90 p-4 rounded-lg shadow-md">
         <div className="text-xl font-bold">Level: {player.level}</div>
-        <div className="mt-2">
-          <div className="text-sm text-gray-600">
-            XP: {player.experience}/{player.level * 100}
-          </div>
-        </div>
       </div>
 
       {!isMobile && ( // Only show instructions on non-mobile

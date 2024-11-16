@@ -147,10 +147,11 @@ export const GameCanvas: React.FC = () => {
             left: `${player.position.x}px`,
             top: `${player.position.y}px`,
             transform: "translate(-50%, -50%)",
+            zIndex: 20,
           }}
         >
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-            P
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold z-100">
+            🥷
           </div>
           <HealthBar
             current={player.health}

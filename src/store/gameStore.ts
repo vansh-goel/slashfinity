@@ -92,6 +92,8 @@ const getRandomItem = () => {
   return items[Math.floor(Math.random() * items.length)];
 };
 
+startBackgroundMusic();
+
 export const useGameStore = create<
   GameState & {
     movePlayer: (direction: Position) => void;
@@ -182,20 +184,18 @@ export const useGameStore = create<
       };
     }),
 
-  attackEnemy: (enemyIndex: number) =>
+  attackEnemy: () =>
     set((state) => {
       const newEnemies = [...state.enemies];
-      const attackRange = state.player.attackRange; // Use the player's attack range
+      const attackRange = state.player.attackRange;
       const playerPosition = state.player.position;
 
-      // Check for all enemies within the attack range
       const enemiesInRange = newEnemies.filter((enemy) => {
         const dx = enemy.position.x - playerPosition.x;
         const dy = enemy.position.y - playerPosition.y;
-        return Math.sqrt(dx * dx + dy * dy) < attackRange; // Check distance
+        return Math.sqrt(dx * dx + dy * dy) < attackRange;
       });
 
-      // Apply damage to each enemy in range
       enemiesInRange.forEach((enemy) => {
         enemy.health -= state.player.damage;
 
@@ -205,8 +205,8 @@ export const useGameStore = create<
         }
       });
 
-      const newExperience =
-        state.player.experience + BASE_XP * enemiesInRange.length; // Increase experience based on number of enemies killed
+      const gainedExperience = BASE_XP * enemiesInRange.length;
+      const newExperience = state.player.experience + gainedExperience;
 
       const currentTime = Date.now();
       const timeSinceLastKill = currentTime - state.lastKillTime;
@@ -214,28 +214,75 @@ export const useGameStore = create<
       let comboKillCount = state.comboKillCount;
 
       if (timeSinceLastKill <= 10000) {
-        comboKillCount += enemiesInRange.length; // Increment combo kill count based on number of enemies killed
+        comboKillCount += enemiesInRange.length;
       } else {
-        comboKillCount = enemiesInRange.length; // Reset combo kill count to the number of enemies killed
+        comboKillCount = enemiesInRange.length;
       }
 
-      const updatedLevel =
-        Math.floor(
-          newExperience /
-            (BASE_XP_TO_LEVEL_UP +
-              (state.player.level - 1) * XP_INCREMENT_PER_LEVEL)
-        ) + 1;
+      const calculateLevel = (experience: number): number => {
+        let level = 1;
+        let requiredXP = BASE_XP_TO_LEVEL_UP;
+
+        while (experience >= requiredXP) {
+          level++;
+          experience -= requiredXP;
+          requiredXP += XP_INCREMENT_PER_LEVEL;
+        }
+
+        return level;
+      };
+
+      const updatedLevel = calculateLevel(newExperience);
+
+      let experienceForNextLevel =
+        BASE_XP_TO_LEVEL_UP + (updatedLevel - 1) * XP_INCREMENT_PER_LEVEL;
+
+      if (
+        newExperience >= experienceForNextLevel &&
+        updatedLevel > state.player.level
+      ) {
+        const levelUpSound = new Audio(levelUpSoundPath);
+        levelUpSound.play();
+
+        const newTrees = generateInitialTrees(updatedLevel);
+
+        const increasedAttackRange = BASE_ATTACK_RANGE + updatedLevel * 5; // Example increment
+        const increasedDamage = state.player.damage + updatedLevel * 5; //
+        const increasedSpeed = Math.max(10, state.player.speed + updatedLevel);
+
+        // 5. Adjust enemy spawn rate slightly
+        const adjustedSpawnRate = BASE_SPAWN_RATE + (updatedLevel - 1) * 0.001; // Gradual increase
+
+        return {
+          enemies: newEnemies,
+          player: {
+            ...state.player,
+            experience: newExperience,
+            level: updatedLevel,
+            attackRange: increasedAttackRange,
+            damage: increasedDamage,
+            speed: increasedSpeed,
+          },
+          level: updatedLevel,
+          enemiesKilled: state.enemiesKilled + enemiesInRange.length,
+          lastKillTime: currentTime,
+          comboKillCount,
+          inventory: [...state.inventory],
+          trees: newTrees,
+          enemySpawnRate: adjustedSpawnRate,
+        };
+      }
 
       const updatedState = {
         enemies: newEnemies,
-        score: state.score + 100 * enemiesInRange.length, // Increase score based on number of enemies killed
+        score: state.score + 100 * enemiesInRange.length,
         player: {
           ...state.player,
-          experience: newExperience,
-          level: updatedLevel,
+          experience: newExperience, // Keep the total experience
+          level: updatedLevel, // Use the calculated level
         },
         level: updatedLevel,
-        enemiesKilled: state.enemiesKilled + enemiesInRange.length, // Update enemies killed count
+        enemiesKilled: state.enemiesKilled + enemiesInRange.length,
         lastKillTime: currentTime,
         comboKillCount,
         inventory: [...state.inventory],
@@ -245,12 +292,6 @@ export const useGameStore = create<
         const item = getRandomItem();
         updatedState.inventory.push(item);
         updatedState.comboKillCount = 0;
-      }
-
-      if (updatedState.player.level > state.player.level) {
-        const levelUpSound = new Audio(levelUpSoundPath);
-        levelUpSound.play();
-        updatedState.player.experience = 0;
       }
 
       return updatedState;
@@ -381,15 +422,15 @@ export const useGameStore = create<
           });
           break;
         case "🗡️":
-          state.player.attackRange *= 20;
-          state.player.damage *= 20;
+          state.player.attackRange *= 2;
+          state.player.damage *= 2;
 
           setTimeout(() => {
             set((s) => ({
               player: {
                 ...s.player,
-                attackRange: s.player.attackRange / 20,
-                damage: s.player.damage / 20,
+                attackRange: s.player.attackRange / 2,
+                damage: s.player.damage / 2,
               },
             }));
           }, 30000);
