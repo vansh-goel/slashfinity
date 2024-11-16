@@ -38,7 +38,7 @@ export interface GameState {
   score: number;
   level: number;
   lastSpawnTime: number;
-  chests: any[];
+
   inventory: any[];
   enemiesKilled: number;
   lastKillTime: number;

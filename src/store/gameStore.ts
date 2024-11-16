@@ -31,12 +31,10 @@ const backgroundMusicPath = "src/assets/game-music-loop-6-144641.mp3";
 
 let backgroundMusic: HTMLAudioElement;
 
-const generateTreePosition = () => {
-  return {
-    x: Math.random() * (GAME_WIDTH - 50) + 25,
-    y: Math.random() * (GAME_HEIGHT - 50) + 25,
-  };
-};
+const generateTreePosition = () => ({
+  x: Math.random() * (GAME_WIDTH - 50) + 25,
+  y: Math.random() * (GAME_HEIGHT - 50) + 25,
+});
 
 const generateInitialTrees = (level: number) => {
   const treeCount = INITIAL_TREE_COUNT + (level - 1) * TREE_INCREMENT_PER_LEVEL;
@@ -63,13 +61,12 @@ const INITIAL_STATE: GameState = {
   trees: generateInitialTrees(1),
   gameOver: false,
   score: 0,
-  level: 1,
   lastSpawnTime: 0,
-  chests: [],
+  level: 1,
   inventory: [],
-  enemiesKilled: 0, // Track the number of enemies killed
-  lastKillTime: 0, // Track the last kill time
-  comboKillCount: 0, // Track the combo kill count
+  enemiesKilled: 0,
+  lastKillTime: 0,
+  comboKillCount: 0,
 };
 
 const MAX_ENEMIES_PER_LEVEL = 20;
@@ -116,20 +113,12 @@ export const useGameStore = create<
         y: state.player.position.y + direction.y * state.player.speed,
       };
 
-      // Logic to wrap around the screen
-      if (newPosition.x < 0) {
-        newPosition.x = GAME_WIDTH; // Move to the right side if going out of view on the left
-      } else if (newPosition.x > GAME_WIDTH) {
-        newPosition.x = 0; // Move to the left side if going out of view on the right
-      }
+      if (newPosition.x < 0) newPosition.x = GAME_WIDTH;
+      else if (newPosition.x > GAME_WIDTH) newPosition.x = 0;
 
-      if (newPosition.y < 0) {
-        newPosition.y = GAME_HEIGHT; // Move to the bottom if going out of view at the top
-      } else if (newPosition.y > GAME_HEIGHT) {
-        newPosition.y = 0; // Move to the top if going out of view at the bottom
-      }
+      if (newPosition.y < 0) newPosition.y = GAME_HEIGHT;
+      else if (newPosition.y > GAME_HEIGHT) newPosition.y = 0;
 
-      // Clamp the position to ensure it stays within bounds
       newPosition = clampPosition(newPosition, GAME_WIDTH, GAME_HEIGHT);
 
       return {
@@ -199,23 +188,27 @@ export const useGameStore = create<
       const newEnemies = [...state.enemies];
       newEnemies[enemyIndex].health -= state.player.damage;
 
-      let newChest; // Declare newChest here
-
       if (newEnemies[enemyIndex].health <= 0) {
         newEnemies.splice(enemyIndex, 1);
         const newExperience = state.player.experience + BASE_XP;
 
-        // Increment enemies killed
         const currentTime = Date.now();
         const timeSinceLastKill = currentTime - state.lastKillTime;
 
         let comboKillCount = state.comboKillCount;
 
         if (timeSinceLastKill <= 10000) {
-          comboKillCount += 1; // Increment combo kill count if within 10 seconds
+          comboKillCount += 1;
         } else {
-          comboKillCount = 1; // Reset combo kill count if more than 10 seconds
+          comboKillCount = 1;
         }
+
+        const updatedLevel =
+          Math.floor(
+            newExperience /
+              (BASE_XP_TO_LEVEL_UP +
+                (state.player.level - 1) * XP_INCREMENT_PER_LEVEL)
+          ) + 1;
 
         const updatedState = {
           enemies: newEnemies,
@@ -223,36 +216,25 @@ export const useGameStore = create<
           player: {
             ...state.player,
             experience: newExperience,
-            level:
-              Math.floor(
-                newExperience /
-                  (BASE_XP_TO_LEVEL_UP +
-                    (state.player.level - 1) * XP_INCREMENT_PER_LEVEL)
-              ) + 1,
+            level: updatedLevel,
           },
+          level: updatedLevel,
           enemiesKilled: state.enemiesKilled + 1,
-          chests: state.chests, // Ensure chests are included
-          lastKillTime: currentTime, // Update last kill time
-          comboKillCount, // Update combo kill count
+          lastKillTime: currentTime,
+          comboKillCount,
+          inventory: [...state.inventory],
         };
 
-        // Check for chest spawn
-        if (updatedState.comboKillCount >= 2) {
-          newChest = {
-            position: generateTreePosition(),
-            health: 100, // Example health for the chest
-            item: getRandomItem(), // Get a random item for the chest
-            createdAt: currentTime, // Track when the chest was created
-          };
-          updatedState.chests = [...state.chests, newChest]; // Add newChest to chests
-          updatedState.comboKillCount = 0; // Reset combo kill count
+        if (updatedState.comboKillCount >= 5) {
+          const item = getRandomItem();
+          updatedState.inventory.push(item);
+          updatedState.comboKillCount = 0;
         }
 
-        // Check for level up and play sound
         if (updatedState.player.level > state.player.level) {
           const levelUpSound = new Audio(levelUpSoundPath);
           levelUpSound.play();
-          updatedState.player.experience = 0; // Reset experience to 0 after leveling up
+          updatedState.player.experience = 0;
         }
 
         return updatedState;
@@ -267,14 +249,8 @@ export const useGameStore = create<
 
       const newEnemies = [...state.enemies];
       const newTrees = [...state.trees];
-      const newChests = [...state.chests];
       let gameOver = false;
       let playerHealth = state.player.health;
-
-      const currentTime = Date.now();
-      const filteredChests = newChests.filter((chest) => {
-        return currentTime - chest.createdAt < 10000; // Keep chest for 10 seconds
-      });
 
       newEnemies.forEach((enemy) => {
         if (enemy.targetTree === undefined) {
@@ -352,36 +328,9 @@ export const useGameStore = create<
         newEnemies.push(newEnemy);
       }
 
-      // Chest logic
-      newChests.forEach((chest) => {
-        chest.health -= 1000; // Decrease health every second
-        if (chest.health <= 0) {
-          // Remove chest if health is 0
-          filteredChests.splice(filteredChests.indexOf(chest), 1);
-        }
-      });
-
-      // Check for chest interactions
-      filteredChests.forEach((chest, index) => {
-        if (calculateDistance(state.player.position, chest.position) < 50) {
-          const item = chest.item; // Get the item from the chest
-          // Call useItem from the state
-          set((s) => {
-            const newInventory = [...s.inventory];
-            if (newInventory.length < 2) {
-              newInventory.push(item);
-            }
-            return { inventory: newInventory };
-          });
-
-          // Remove the chest from the game state
-          filteredChests.splice(index, 1);
-        }
-      });
       return {
         enemies: newEnemies,
         trees: newTrees,
-        chests: filteredChests,
         gameOver,
         player: {
           ...state.player,
@@ -398,23 +347,20 @@ export const useGameStore = create<
 
   useItem: (item: string) =>
     set((state) => {
-      const newInventory = [...state.inventory];
+      const newInventory = state.inventory.filter((i) => i !== item); // Remove the item from inventory
       if (newInventory.length < 2) {
         newInventory.push(item);
       }
 
       switch (item) {
         case "🪽":
-          // Logic to kill all enemies
-          return { enemies: [] }; // Clear all enemies
+          return { enemies: [] };
         case "🫧":
-          // Logic to heal trees
           state.trees.forEach((tree) => {
             tree.health = Math.min(tree.maxHealth, tree.health + 20);
           });
           break;
         case "🗡️":
-          // Increase attack range and damage for 30 seconds
           state.player.attackRange *= 20;
           state.player.damage *= 20;
           setTimeout(() => {
@@ -423,9 +369,8 @@ export const useGameStore = create<
           }, 30000);
           break;
         case "🛡️":
-          // Immunity for trees for 20 seconds
           state.trees.forEach((tree) => {
-            tree.isImmune = true; // Assuming you have a way to track immunity
+            tree.isImmune = true;
           });
           setTimeout(() => {
             state.trees.forEach((tree) => {
@@ -434,11 +379,9 @@ export const useGameStore = create<
           }, 20000);
           break;
         case "🛠️":
-          // Build fence around trees
           // Implement fence logic here
           break;
         case "🌱":
-          // Logic to plant a new tree
           const newTree = {
             position: generateTreePosition(),
             health: 200,
@@ -448,7 +391,7 @@ export const useGameStore = create<
           return { trees: [...state.trees, newTree] };
       }
 
-      return { inventory: newInventory };
+      return { inventory: newInventory }; // Return the updated inventory
     }),
 
   removeItem: (item: string) =>

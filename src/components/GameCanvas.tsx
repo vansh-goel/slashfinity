@@ -10,7 +10,6 @@ export const GameCanvas: React.FC = () => {
     player,
     enemies,
     trees,
-    score,
     gameOver,
     movePlayer,
     attackEnemy,
@@ -19,8 +18,7 @@ export const GameCanvas: React.FC = () => {
     resetGame,
     level,
     inventory, // Add inventory to destructured state
-    chests, // Add chests to destructured state
-    useItem,
+    useItem, // Add useItem to destructured state
   } = useGameStore();
 
   const [showConfetti, setShowConfetti] = useState(false);
@@ -108,18 +106,18 @@ export const GameCanvas: React.FC = () => {
     if (level > 1) {
       setShowConfetti(true);
       const timer = setTimeout(() => {
-        setShowConfetti(false);
-      }, 3000);
+        setShowConfetti(false); // Stop confetti after 1 second
+      }, 1000); // 1000 milliseconds = 1 second
       return () => clearTimeout(timer);
     }
-  }, [level, showConfetti]);
+  }, [level]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-green-300">
       {showConfetti && (
         <ConfettiExplosion
-          particleCount={250}
-          duration={3000}
+          particleCount={100} // Reduced particle count to minimize lag
+          duration={1000} // Adjusted duration to match the timeout
           force={0.8}
           width={1600}
         />
@@ -179,27 +177,6 @@ export const GameCanvas: React.FC = () => {
           </div>
         ))}
 
-        {/* Display Chests */}
-        {chests.map((chest, index) => (
-          <div
-            key={index}
-            className="absolute transition-transform"
-            style={{
-              left: `${chest.position.x}px`,
-              top: `${chest.position.y}px`,
-              transform: "translate(-50%, -50%)",
-              zIndex: 20,
-            }}
-            onClick={() => {
-              useItem(chest.item);
-            }}
-          >
-            <div className="w-8 h-8 flex items-center justify-center text-white font-bold">
-              🎁
-            </div>
-          </div>
-        ))}
-
         {/* Enemies */}
         {enemies.map((enemy, index) => (
           <div
@@ -256,7 +233,9 @@ export const GameCanvas: React.FC = () => {
             <div
               key={index}
               className="bg-white p-2 m-1 rounded shadow cursor-pointer"
-              onClick={() => useItem(item)} // Use the item when clicked
+              onClick={() => {
+                useItem(item); // Use the item when clicked
+              }}
             >
               {item}
             </div>
