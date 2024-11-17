@@ -12,7 +12,7 @@ function App() {
 
   return (
     <div className="w-full overflow-hidden">
-      <TonConnectUIProvider manifestUrl="https://20e1-103-214-60-77.ngrok-free.app/tonconnect-manifest.json">
+      <TonConnectUIProvider manifestUrl="https://slashfinity.vercel.app/tonconnect-manifest.json">
         {isGameStarted ? <GameCanvas /> : <HomeScreen onPlay={handlePlay} />}
       </TonConnectUIProvider>
     </div>
