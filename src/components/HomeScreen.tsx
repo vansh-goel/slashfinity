@@ -15,7 +15,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onPlay }) => {
       >
         Play Game
       </button>
-      <TonConnectButton className=" text-white px-4 py-2 rounded transition" />
+      <TonConnectButton className="text-white px-4 py-2 rounded transition" />
     </div>
   );
 };
