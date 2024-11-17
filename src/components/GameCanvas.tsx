@@ -230,12 +230,12 @@ export const GameCanvas: React.FC = () => {
       <div className="absolute right-0 top-0 z-50 p-4">
         <h2 className="text-lg font-bold">Inventory</h2>
         <div className="flex flex-col">
-          {inventory.map((item, index) => (
+          {Array.from(new Set(inventory)).map((item, index) => (
             <div
               key={index}
               className="bg-white p-2 m-1 rounded shadow cursor-pointer"
               onClick={() => {
-                useItem(item); // Use the item when clicked
+                useItem(item);
               }}
             >
               {item}

@@ -402,11 +402,7 @@ export const useGameStore = create<
 
   useItem: (item: string) =>
     set((state) => {
-      if (state.inventory.includes(item)) {
-        return { inventory: state.inventory };
-      }
-
-      const newInventory = [...state.inventory, item];
+      const newInventory = state.inventory.filter((i) => i !== item); // Remove the item from inventory
 
       switch (item) {
         case "🪽":
