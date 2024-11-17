@@ -88,6 +88,7 @@ const getRandomItem = () => {
     "🗡️", // Increase attack
     "🛡️", // Immunity for trees
     "🌱", // Plant a new tree
+    "❤️", // Increase player health by 30%
   ];
   return items[Math.floor(Math.random() * items.length)];
 };
@@ -401,7 +402,11 @@ export const useGameStore = create<
 
   useItem: (item: string) =>
     set((state) => {
-      const newInventory = state.inventory.filter((i) => i !== item); // Remove the item from inventory
+      if (state.inventory.includes(item)) {
+        return { inventory: state.inventory };
+      }
+
+      const newInventory = [...state.inventory, item];
 
       switch (item) {
         case "🪽":
@@ -453,6 +458,18 @@ export const useGameStore = create<
             id: state.trees.length + 1,
           };
           return { trees: [...state.trees, newTree], inventory: newInventory };
+        case "❤️":
+          const healthIncrease = state.player.maxHealth * 0.3;
+          return {
+            player: {
+              ...state.player,
+              health: Math.min(
+                state.player.maxHealth,
+                state.player.health + healthIncrease
+              ),
+            },
+            inventory: newInventory,
+          };
       }
 
       return { inventory: newInventory };
