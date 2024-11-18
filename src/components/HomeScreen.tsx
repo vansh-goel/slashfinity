@@ -1,11 +1,14 @@
 import React from "react";
 import { TonConnectButton } from "@tonconnect/ui-react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 interface HomeScreenProps {
   onPlay: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onPlay }) => {
+  const navigate = useNavigate(); // Initialize useNavigate
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-800 via-emerald-900 to-teal-900 flex flex-col justify-center items-center text-white p-4">
       <div className="text-center max-w-md w-full space-y-6">
@@ -26,7 +29,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onPlay }) => {
             Start Your Adventure
           </button>
 
-          <button className="w-full border-2 border-white/30 px-6 py-3 rounded-full hover:bg-white/10 transition-colors">
+          <button
+            onClick={() => navigate("/inventory")} // Navigate to /inventory
+            className="w-full border-2 border-white/30 px-6 py-3 rounded-full hover:bg-white/10 transition-colors"
+          >
             View Inventory
           </button>
         </div>
