@@ -81,7 +81,7 @@ const startBackgroundMusic = () => {
   });
 };
 
-const getRandomItem = () => {
+const getRandomItem = (inventory: string[]) => {
   const items = [
     "🪽", // Kill all enemies
     "🫧", // Heal trees
@@ -90,6 +90,9 @@ const getRandomItem = () => {
     "🌱", // Plant a new tree
     "❤️", // Increase player health by 30%
   ];
+
+  if (inventory.includes("⏱️")) items.push("⏱️");
+  if (inventory.includes("🔫")) items.push("🔫");
   return items[Math.floor(Math.random() * items.length)];
 };
 
@@ -104,6 +107,7 @@ export const useGameStore = create<
     resetGame: () => void;
     useItem: (item: string) => void;
     removeItem: (item: string) => void;
+    addItem: (item: string) => void;
   }
 >((set) => ({
   ...INITIAL_STATE,
@@ -290,7 +294,7 @@ export const useGameStore = create<
       };
 
       if (updatedState.comboKillCount >= 5) {
-        const item = getRandomItem();
+        const item = getRandomItem(state.inventory);
         updatedState.inventory.push(item);
         updatedState.comboKillCount = 0;
       }
@@ -466,6 +470,30 @@ export const useGameStore = create<
             },
             inventory: newInventory,
           };
+        case "⏱️": // Stop enemies for 10 seconds
+          const stopEnemies = () => {
+            set((s) => ({
+              enemies: s.enemies.map((enemy) => ({
+                ...enemy,
+                speed: 0, // Stop enemy movement
+              })),
+            }));
+            setTimeout(() => {
+              set((s) => ({
+                enemies: s.enemies.map((enemy) => ({
+                  ...enemy,
+                  speed:
+                    BASE_ENEMY_SPEED +
+                    (s.player.level - 1) * ENEMY_SPEED_INCREMENT, // Restore speed
+                })),
+              }));
+            }, 10000);
+          };
+          stopEnemies();
+          break;
+        case "🔫": // Logic for shooting projectiles
+          // Implement projectile shooting logic here
+          break;
       }
 
       return { inventory: newInventory };
@@ -476,6 +504,10 @@ export const useGameStore = create<
       const newInventory = state.inventory.filter((i) => i !== item);
       return { inventory: newInventory };
     }),
+  addItem: (item: string) =>
+    set((state) => ({
+      inventory: [...state.inventory, item],
+    })),
 }));
 
 startBackgroundMusic();
