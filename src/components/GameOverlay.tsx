@@ -13,12 +13,17 @@ export const GameOverlay: React.FC<GameOverlayProps> = ({
   return (
     <div className="absolute inset-0 pointer-events-none z-50">
       <div className="absolute top-4 left-4 bg-white/90 p-4 rounded-lg shadow-md">
-        <div className="text-xl font-bold">Level: {player.level}</div>
+        <div className="text-xl font-bold text-green-700">
+          Level: {player.level}
+        </div>{" "}
+        {/* Updated text color */}
       </div>
 
       {!isMobile && ( // Only show instructions on non-mobile
-        <div className="absolute bottom-4 left-4 bg-white/90 p-4 rounded-lg shadow-md">
-          <div className="text-sm">
+        <div className="absolute bottom-4 text-black left-4 bg-white/90 p-4 rounded-lg shadow-md">
+          <div className="text-sm text-black">
+            {" "}
+            {/* Updated text color */}
             <p className="font-semibold">Controls:</p>
             <p>WASD or Arrow Keys to move</p>
             <p>Spacebar to attack enemies</p>

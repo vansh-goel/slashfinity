@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { HealthBar } from "./HealthBar";
 import { GameOverlay } from "./GameOverlay";
-import CustomJoystick from "./CustomJoystick"; // Import the custom joystick
+import CustomJoystick from "./CustomJoystick";
 import ConfettiExplosion from "react-confetti-explosion";
 
 export const GameCanvas: React.FC = () => {
@@ -17,8 +17,8 @@ export const GameCanvas: React.FC = () => {
     spawnEnemy,
     resetGame,
     level,
-    inventory, // Add inventory to destructured state
-    useItem, // Add useItem to destructured state
+    inventory,
+    useItem,
   } = useGameStore();
 
   const [showConfetti, setShowConfetti] = useState(false);
@@ -106,18 +106,18 @@ export const GameCanvas: React.FC = () => {
     if (level > 1) {
       setShowConfetti(true);
       const timer = setTimeout(() => {
-        setShowConfetti(false); // Stop confetti after 1 second
-      }, 1000); // 1000 milliseconds = 1 second
+        setShowConfetti(false);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [level]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-green-300">
+    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-green-800 via-emerald-900 to-teal-900">
       {showConfetti && (
         <ConfettiExplosion
-          particleCount={100} // Reduced particle count to minimize lag
-          duration={1000} // Adjusted duration to match the timeout
+          particleCount={100}
+          duration={1000}
           force={0.8}
           width={1600}
         />
@@ -125,12 +125,12 @@ export const GameCanvas: React.FC = () => {
 
       {gameOver && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl text-center">
+          <div className="bg-white/10 border border-white/20 p-8 rounded-lg shadow-xl text-center text-white">
             <h2 className="text-2xl font-bold mb-4">Game Over!</h2>
             <p className="mb-4">Level: {player.level}</p>
             <button
               onClick={resetGame}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
             >
               Play Again (Press R)
             </button>
@@ -150,7 +150,7 @@ export const GameCanvas: React.FC = () => {
             zIndex: 20,
           }}
         >
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold z-100">
+          <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold z-100">
             🥷
           </div>
           <HealthBar
@@ -178,7 +178,6 @@ export const GameCanvas: React.FC = () => {
           </div>
         ))}
 
-        {/* Enemies */}
         {enemies.map((enemy, index) => (
           <div
             key={index}
@@ -187,12 +186,12 @@ export const GameCanvas: React.FC = () => {
               left: `${enemy.position.x}px`,
               top: `${enemy.position.y}px`,
               transform: "translate(-50%, -50%)",
-              zIndex: 10, // Ensure enemies are above trees
+              zIndex: 10,
             }}
           >
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                enemy.type === "logger" ? "bg-red-500" : "bg-purple-500"
+                enemy.type === "logger" ? "bg-red-600" : "bg-purple-600"
               }`}
             >
               {enemy.type === "logger" ? "☢️" : "👹"}
@@ -226,14 +225,13 @@ export const GameCanvas: React.FC = () => {
         />
       )}
 
-      {/* Inventory Display */}
-      <div className="absolute right-0 top-0 z-50 p-4">
+      <div className="absolute right-0 top-0 z-50 p-4 text-white">
         <h2 className="text-lg font-bold">Inventory</h2>
         <div className="flex flex-col">
           {Array.from(new Set(inventory)).map((item, index) => (
             <div
               key={index}
-              className="bg-white p-2 m-1 rounded shadow cursor-pointer"
+              className="bg-white/10 border border-white/20 p-2 m-1 rounded shadow cursor-pointer hover:bg-white/20 transition"
               onClick={() => {
                 useItem(item);
               }}
