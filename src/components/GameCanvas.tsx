@@ -100,6 +100,7 @@ export const GameCanvas: React.FC = () => {
     player.position,
     gameOver,
     resetGame,
+    isMobile,
   ]);
 
   useEffect(() => {

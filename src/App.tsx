@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { GameCanvas } from "./components/GameCanvas";
 import { HomeScreen } from "./components/HomeScreen";
 import { TonConnectUIProvider } from "@tonconnect/ui-react";
+import Inventory from "./pages/Inventory";
 
 function App() {
   const [isGameStarted, setIsGameStarted] = useState(false);
@@ -26,6 +27,7 @@ function App() {
                 )
               }
             />
+            <Route path="/inventory" element={<Inventory />} />
           </Routes>
         </Router>
       </TonConnectUIProvider>
