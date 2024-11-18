@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { GameCanvas } from "./components/GameCanvas";
 import { HomeScreen } from "./components/HomeScreen";
+import InventoryPage from "./components/InventoryPage"; // Import the new InventoryPage
 import { TonConnectUIProvider } from "@tonconnect/ui-react";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
                 )
               }
             />
+            <Route path="/inventory" element={<InventoryPage />} />
           </Routes>
         </Router>
       </TonConnectUIProvider>

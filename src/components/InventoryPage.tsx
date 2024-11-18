@@ -1,137 +1,143 @@
-// import React from "react";
-// import { useGameStore } from "../store/gameStore";
-// import axios from "axios";
+import React from "react";
+import { useGameStore } from "../store/gameStore";
+import axios from "axios";
 
-// import { useTonConnectUI } from "@tonconnect/ui-react";
-// import { Address, beginCell } from "@ton/core";
+const POWER_UPS = [
+  {
+    name: "⏱️ Stop All Enemies",
+    price: 10,
+    description: "Freeze time and strategize",
+  },
+  {
+    name: "🌱 Eco Shield",
+    price: 15,
+    description: "Protect your green empire",
+  },
+  {
+    name: "🍃 Nature Boost",
+    price: 20,
+    description: "Accelerate environmental progress",
+  },
+];
 
-// const POWER_UPS = [
-//   { name: "Energy Boost", price: 10 },
-//   { name: "Shield", price: 15 },
-//   { name: "Speed Multiplier", price: 20 },
-//   { name: "Stop Enemies", price: 25 }, // ⏱️
-//   { name: "Projectile Shooter", price: 30 }, // 🔫
-// ];
+const InventoryPage: React.FC = () => {
+  const { addItem } = useGameStore();
 
-// const InventoryPage: React.FC = () => {
-//   const [tonConnectUI] = useTonConnectUI();
-//   const { inventory, addItem } = useGameStore();
+  const handlePurchase = async (powerUp: string, price: number) => {
+    const orderAmount = price;
+    const merchantOrderNo = Date.now().toString();
+    const userId = "test@aeon.com";
+    const appId = import.meta.env.VITE_APP_ID;
+    const secretKey = import.meta.env.VITE_SECRET_ID;
+    const redirectURL = "https://slashfinity.vercel.app";
+    const callbackURL = "https://slashfinity.vercel.app";
 
-//   const handlePurchase = async (item: string) => {
-//     const orderAmount = 10; // Fixed price for now
-//     const merchantOrderNo = Date.now().toString();
-//     const userId = "test@aeon.com";
-//     const appId = import.meta.env.VITE_APP_ID;
-//     const secretKey = import.meta.env.VITE_SECRET_ID;
-//     const redirectURL = "https://slashfinity.vercel.app";
-//     const callbackURL = "https://slashfinity.vercel.app";
+    const sign = await generateSignature({
+      appId,
+      merchantOrderNo,
+      orderAmount: orderAmount.toString(),
+      payCurrency: "USD",
+      userId,
+      secretKey,
+    });
 
-//     // Generate signature for payment
-//     const sign = generateSignature({
-//       appId,
-//       merchantOrderNo,
-//       orderAmount: orderAmount.toString(),
-//       payCurrency: "USDT",
-//       userId,
-//       secretKey,
-//     });
+    const params = {
+      appId,
+      merchantOrderNo,
+      orderAmount: orderAmount.toString(),
+      payCurrency: "USD",
+      userId,
+      redirectURL,
+      callbackURL,
+      sign,
+    };
 
-//     const params = {
-//       appId,
-//       merchantOrderNo,
-//       orderAmount: orderAmount.toString(),
-//       payCurrency: "USDT",
-//       userId,
-//       paymentTokens: "USDT",
-//       redirectURL,
-//       callbackURL,
-//       sign,
-//     };
+    try {
+      const response = await axios.post(
+        "https://sbx-crypto-payment-api.aeon.xyz/open/api/payment/V2",
+        params
+      );
 
-//     try {
-//       const response = await axios.post(
-//         "https://sbx-crypto-payment-api.aeon.xyz/open/api/payment/V2",
-//         params
-//       );
+      if (response.data.code === "0") {
+        addItem(powerUp);
+        window.location.href = response.data.model.webUrl;
+      } else {
+        console.error("Payment error:", response.data.msg);
+      }
+    } catch (error) {
+      console.error("Error creating order:", error);
+    }
+  };
 
-//       if (response.data.code === "0") {
-//         // Payment successful, proceed with blockchain transaction
-//         await purchasePowerUpOnBlockchain(item);
+  const generateSignature = async (params: {
+    appId: string;
+    merchantOrderNo: string;
+    orderAmount: string;
+    payCurrency: string;
+    userId: string;
+    secretKey: string;
+  }) => {
+    const {
+      appId,
+      merchantOrderNo,
+      orderAmount,
+      payCurrency,
+      userId,
+      secretKey,
+    } = params;
+    const stringToSign = `appId=${appId}&merchantOrderNo=${merchantOrderNo}&orderAmount=${orderAmount}&payCurrency=${payCurrency}&userId=${userId}&key=${secretKey}`;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(stringToSign);
+    const hashBuffer = await crypto.subtle.digest("SHA-512", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray
+      .map((b) => ("00" + b.toString(16)).slice(-2))
+      .join("")
+      .toUpperCase();
+    return hashHex;
+  };
 
-//         // Add item to local inventory
-//         addItem(item);
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-800 via-emerald-900 to-teal-900 flex flex-col justify-center items-center text-white p-4">
+      <div className="w-full max-w-md space-y-6">
+        <h1 className="text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-600">
+          Power-Up Shop
+        </h1>
 
-//         // Redirect to payment URL
-//         window.location.href = response.data.model.webUrl;
-//       } else {
-//         console.error("Payment error:", response.data.msg);
-//       }
-//     } catch (error) {
-//       console.error("Error creating order:", error);
-//     }
-//   };
+        <div className="space-y-4">
+          {POWER_UPS.map((powerUp) => (
+            <div
+              key={powerUp.name}
+              className="bg-white/10 rounded-xl p-4 flex justify-between items-center hover:bg-white/20 transition-colors"
+            >
+              <div>
+                <h3 className="font-semibold">{powerUp.name}</h3>
+                <p className="text-sm text-gray-300">{powerUp.description}</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-green-300">{powerUp.price} USD</span>
+                <button
+                  onClick={() => handlePurchase(powerUp.name, powerUp.price)}
+                  className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-full text-white transition-colors"
+                >
+                  Purchase
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
 
-//   const purchasePowerUpOnBlockchain = async (powerUp: string) => {
-//     const contractAddress = Address.parse("YOUR_CONTRACT_ADDRESS_HERE");
+        <div className="flex justify-center">
+          <button
+            onClick={() => window.history.back()}
+            className="border-2 border-white/30 px-6 py-3 rounded-full hover:bg-white/10 transition-colors"
+          >
+            Back to Game
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-//     const transaction = {
-//       to: contractAddress.toString(),
-//       value: "0.05",
-//       payload: beginCell()
-//         .storeUint(1, 32)
-//         .storeStringTail(powerUp)
-//         .endCell()
-//         .toBoc()
-//         .toString("base64"),
-//       validUntil: Math.floor(Date.now() / 1000) + 3600,
-//       messages: [],
-//     };
-
-//     await tonConnectUI.sendTransaction(transaction);
-//   };
-
-//   const generateSignature = (params: {
-//     appId: string;
-//     merchantOrderNo: string;
-//     orderAmount: string;
-//     payCurrency: string;
-//     userId: string;
-//     secretKey: string;
-//   }) => {
-//     const {
-//       appId,
-//       merchantOrderNo,
-//       orderAmount,
-//       payCurrency,
-//       userId,
-//       secretKey,
-//     } = params;
-
-//     const stringToSign = `appId=${appId}&merchantOrderNo=${merchantOrderNo}&orderAmount=${orderAmount}&payCurrency=${payCurrency}&userId=${userId}&key=${secretKey}`;
-
-//     // Use jshashes to generate SHA512 hash
-//     const sha512 = new Hashes.SHA512();
-//     return sha512.hex(stringToSign).toUpperCase(); // Convert to uppercase
-//   };
-
-//   return (
-//     <div className="inventory-page">
-//       <h2>Power-Up Shop</h2>
-//       {POWER_UPS.map((powerUp) => (
-//         <div key={powerUp.name} className="power-up-item">
-//           <span>{powerUp.name}</span>
-//           <span>Price: {powerUp.price} USDT</span>
-//           <button
-//             onClick={() => handlePurchase(powerUp.name)}
-//             disabled={inventory.includes(powerUp.name)}
-//           >
-//             {inventory.includes(powerUp.name) ? "Owned" : "Purchase"}
-//           </button>
-//         </div>
-//       ))}
-//       <button onClick={() => window.history.back()}>Back</button>
-//     </div>
-//   );
-// };
-
-// export default InventoryPage;
+export default InventoryPage;
